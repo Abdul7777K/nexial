@@ -1,0 +1,64 @@
+name: Cover
+on:
+  # Allow the workflow to be triggered manually using the GitHub API, CLI, or browser interface
+  workflow_dispatch:
+  # Trigger the workflow automatically on pushes to main
+  push:
+    branches: [ main ]
+concurrency:
+  # Only allow one run of the workflow per branch to run at a time
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Test:
+    runs-on: windows-latest
+    env:
+      JVM_ARGS: -Xmx4096m
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Initialize Gradle build
+        run: gradle init
+      - name: Compile project
+        run: gradle build
+      # Get, unzip, and activate Diffblue Cover
+      - name: Download Diffblue Cover
+        run: |
+          mkdir -p "$RUNNER_TEMP/dcover"
+
+          cd "$RUNNER_TEMP/dcover"
+
+      - name: Redownload Diffblue Cover CLI zip file
+        run: |
+          curl --silent --show-error --location --output "diffblue-cover-cli.zip" "https://release.diffblue.com/2023.10.01/88bd072f1e783483a53e1fa7e53511d57b64a3b64e6f618c624f5a990409262f/diffblue-cover-cli-2023.10.01.zip"
+      - name: Print the list of dir
+        run: |
+          ls
+      - name: change dir
+        run: |
+          cd D:\a\DemoProject
+
+      - name: Unzip Diffblue Cover CLI zip file
+        run: |
+          unzip diffblue-cover-cli.zip
+
+      - name: Remove Diffblue Cover CLI zip file
+        run: |
+          Remove-Item -Path "diffblue-cover-cli.zip" -Force
+
+      - name: Add Diffblue Cover directory to GITHUB_PATH
+        run: |
+          echo "$RUNNER_TEMP/dcover" >> "$GITHUB_PATH"
+
+      - name: Activate Diffblue Cover
+        run: |
+          dcover activate "${{ secrets.DIFFBLUE_COVER_LICENSE_KEY }}"
+
+      # Generate tests with Diffblue Cover
+      - name: Generate tests
+        run: |
+          dcover create org.example.Addition --batch --working-directory --output test-cases.java
