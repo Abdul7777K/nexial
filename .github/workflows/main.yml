@@ -1,4 +1,10 @@
 name: hello-world
+on:
+  # Allow the workflow to be triggered manually using the GitHub API, CLI, or browser interface
+  workflow_dispatch:
+  # Trigger the workflow automatically on pushes to main
+  push:
+    branches: [ main ]
 jobs:
   my-job:
     runs-on: ubuntu-latest
