@@ -54,7 +54,7 @@ jobs:
         run: |
           echo "$RUNNER_TEMP/dcover" >> "$GITHUB_PATH"
 
-      - name: Activate Diffblue Cover
+      - name: Activate Diffblue Covers
         run: |
           dcover activate "${{ secrets.DIFFBLUE_COVER_LICENSE_KEY }}"
 
