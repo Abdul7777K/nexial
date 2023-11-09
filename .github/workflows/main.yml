@@ -1,20 +1,64 @@
-name: hello-world
+name: Cover
 on:
   # Allow the workflow to be triggered manually using the GitHub API, CLI, or browser interface
   workflow_dispatch:
   # Trigger the workflow automatically on pushes to main
   push:
-    branches: [ main ]
+    branches: [ master ]
+concurrency:
+  # Only allow one run of the workflow per branch to run at a time
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  my-job:
-    runs-on: ubuntu-latest
+  Test:
+    runs-on: windows-latest
+    env:
+      JVM_ARGS: -Xmx4096m
     steps:
-      - name: my-step
-        run: echo "Hello World"
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Initialize Gradle build
+        run: gradle init
+      - name: Compile project
+        run: gradle build
+      # Get, unzip, and activate Diffblue Cover
+      - name: Download Diffblue Cover
+        run: |
+          mkdir -p "$RUNNER_TEMP/dcover"
+
+          cd "$RUNNER_TEMP/dcover"
+
       - name: Redownload Diffblue Cover CLI zip file
         run: |
-          curl --silent --show-error --location --output "diffblue-cover-cli.zip" "https://newsletters.diffblue.com/e3t/Ctc/DM+113/cSDxS04/VW5-nv5dT5nTW5fCPyw3tVtvSW1vWpFD55gYqQN8wLL5R5m_5PW7lCGcx6lZ3m6W92-wQH2rwSvcW4qVhnd3hZ-bcV-dHTN3P93WSW13rLDN5fzcJPW8sBnrM6mFk6LN337b0X7DmqRN580ph5BgP46W5bnBKS5_vcv8W6Qk5kc8yj5PRW7m_j8Z1D3sTPVVQR143dmgDGW4kWgNP6VKM-KW4LJFTy5vRmBWW8sVYF72wM6qHW36Q8hw2Gh0L1N2by4QZbr21gW7fy2Vm95H5V9W3xZRBw4ZFj_1W7CtmrX8Gg5klW3fnJMV6V23DjW5vzqL879R0lYW4p7cQV1l9XHFN13s4GJ4ZGJcW1JWY4-4k5Ry2W8Gz2K15f4TQlV_9G1-96dBYVW5Cj8w426Hg9-W4rDsJD8gbXXTW7c3wfh6Gqgs4W3vZTYz7J2w2PW2ZcMsC4TX8szVcsKv76m7Y5yW5_xb-j4XQkswVkP5cS7FMFNmW1L_mjd5rGRX5W4Y5Lc583fGfDW13CdHK7DHXj1W8qgyQy8tSbfNW7wBkHf3HpJG9W6Prj8M5MrC7Yf86f22-04"
-      - name: listing the dir
-        run: ls
-      - name: checking present working dir
-        run: pwd
+          curl --silent --show-error --location --output "diffblue-cover-cli.zip" "https://release.diffblue.com/2023.10.01/88bd072f1e783483a53e1fa7e53511d57b64a3b64e6f618c624f5a990409262f/diffblue-cover-cli-2023.10.01.zip"
+      - name: Print the list of dir
+        run: |
+          ls
+      - name: change dir
+        run: |
+          cd D:\a\DemoProject
+
+      - name: Unzip Diffblue Cover CLI zip file
+        run: |
+          unzip diffblue-cover-cli.zip
+
+      - name: Remove Diffblue Cover CLI zip file
+        run: |
+          Remove-Item -Path "diffblue-cover-cli.zip" -Force
+
+      - name: Add Diffblue Cover directory to GITHUB_PATH
+        run: |
+          echo "$RUNNER_TEMP/dcover" >> "$GITHUB_PATH"
+
+      - name: Activate Diffblue Cover
+        run: |
+          dcover activate "${{ secrets.DIFFBLUE_COVER_LICENSE_KEY }}"
+
+      # Generate tests with Diffblue Cover
+      - name: Generate tests
+        run: |
+          dcover create org.example.Addition --batch --working-directory --output test-cases.java
