@@ -8,4 +8,10 @@ jobs:
         run: echo "Hello World!"
       - name: check java version
         run: java -version
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin' # See 'Supported distributions' for available options
+          java-version: '17'
+      - name: check java version again
+        run: java -version
 
